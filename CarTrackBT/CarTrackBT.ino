@@ -3,8 +3,8 @@
 #include <QueueList.h>
 
 char getstr;
-char str_guiding[100];
-char str_following[100];
+//char str_guiding[100];
+QueueList <char> pathQueue;
 
 int Left_motor_go = 8;
 int Left_motor_back = 9;
@@ -57,7 +57,19 @@ void run()
   analogWrite(Left_motor_back, speed_normal);
 }
 
-void brake()
+void fast_run()
+{
+  digitalWrite(Right_motor_go, HIGH);
+  digitalWrite(Right_motor_back, LOW);
+  analogWrite(Right_motor_go, speed_high);
+  analogWrite(Right_motor_back, speed_zero);
+  digitalWrite(Left_motor_go, LOW);
+  digitalWrite(Left_motor_back, HIGH);
+  analogWrite(Left_motor_go, speed_zero);
+  analogWrite(Left_motor_back, speed_high);
+}
+
+void stop()
 {
   digitalWrite(Right_motor_go, LOW);
   digitalWrite(Right_motor_back, LOW);
@@ -127,6 +139,18 @@ void back(int time)
   analogWrite(Left_motor_back, speed_zero);
   delay(time * 100);
 }
+
+void new_right()
+{
+  digitalWrite(Right_motor_go, LOW);
+  digitalWrite(Right_motor_back, LOW);
+  analogWrite(Right_motor_go, speed_zero);
+  analogWrite(Right_motor_back, speed_zero);
+  digitalWrite(Left_motor_go, LOW);
+  digitalWrite(Left_motor_back, HIGH);
+  analogWrite(Left_motor_go, speed_zero);
+  analogWrite(Left_motor_back, speed_high);
+}
 //==========================================================
 
 void keyscan()
@@ -156,18 +180,18 @@ void keyscan()
 
 void choice() {
   getstr = Serial.read();
-  if (getstr == 'L' || getstr == 'R' || getstr == 'l' || getstr == 'r' || getstr == 'U' || getstr == 'u') {
-    str_guiding[i] = getstr;
+  if (getstr == 'L' || getstr == 'l' || 
+      getstr == 'R' || getstr == 'r' ||
+      getstr == 'U' || getstr == 'u' ||
+      getstr == 'D' || getstr == 'd') {
+        pathQueue.push(getstr);
 
-    xflag = 1;
-    Serial.println(str_guiding[i]);
-    i++;
+        Serial.println(pathQueue.peek());
   }
   delay(300);
 }
 
 void loop() {
-  a = 0;
   keyscan();
   
   while (1) {
@@ -184,30 +208,29 @@ void loop() {
         right();
       }
       else {
-        brake();
+        stop();
         choice();
         flag = 1;
       }
     }
     if (flag == 1 ) {
-      for(count = a ; count < i ; count++){
-        if(str_guiding[count]){
-          if (str_guiding[a] == 'L' || str_guiding[a] == 'l'){
-            Serial.println("SL");
-            spin_left(3);
+      while(!pathQueue.isEmpty()){
+          char popQueue = pathQueue.peek();
+          pathQueue.pop();
+          if (popQueue == 'L' || popQueue == 'l'){
+            spin_left(5);
           }
-          else if (str_guiding[a] == 'R' || str_guiding[a] == 'r'){
-            Serial.println("SR");
-            right();
-            delay(120);
+          else if (popQueue == 'R' || popQueue == 'r'){
+            new_right();
+            delay(400);
           }
-          else if (str_guiding[a] == 'U' || str_guiding[a] == 'u') {
-            Serial.println("RUN");
-            run();
+          else if (popQueue == 'U' || popQueue == 'u') {
+            fast_run();
             delay(200);
           }
-          a++;
-        }
+          else if (popQueue == 'D' || popQueue == 'd') {
+            spin_right(6.5);
+          }
       }
       flag = 0;
     }
