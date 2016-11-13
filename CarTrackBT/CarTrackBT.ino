@@ -16,11 +16,13 @@ int beep = A3;
 const int SensorRight = 3;
 const int SensorLeft = 4;
 
+char popQueue;
+
 int SL;
 int SR;
 
 int speed_high = 120;
-int speed_normal = 30;
+int speed_normal = 40;
 int speed_zero = 0;
 int speed_begin = 100;
 
@@ -163,8 +165,8 @@ void choice() {
     getstr = Serial.read();
     if (getstr == 'L' || getstr == 'l' || 
         getstr == 'R' || getstr == 'r' ||
-        getstr == 'U' || getstr == 'u' ||
-        getstr == 'D' || getstr == 'd') {
+        getstr == 'F' || getstr == 'f' ||
+        getstr == 'B' || getstr == 'b') {
         pathQueue.push(getstr);
   
         Serial.println(pathQueue.peek());
@@ -195,22 +197,29 @@ void loop() {
             }
         }
         else if (isFork) { // 如果遇到叉路
+            //bool isFirst = 1;
             while(!pathQueue.isEmpty()){
-                char popQueue = pathQueue.peek();
+//                if(isFirst){
+//                    digitalWrite(beep, HIGH);
+//                    isFirst = 0;
+//                    delay(200);
+//                    digitalWrite(beep, LOW);
+//                }
+                popQueue = pathQueue.peek();
                 pathQueue.pop();
                 if (popQueue == 'L' || popQueue == 'l'){
-                    spin_left(5);
+                    spin_left(5.5);
                 }
                 else if (popQueue == 'R' || popQueue == 'r'){
                     new_right();
-                    delay(400);
+                    delay(450);
                 }
-                else if (popQueue == 'U' || popQueue == 'u') {
+                else if (popQueue == 'F' || popQueue == 'f') {
                     fast_run();
                     delay(200);
                 }
-                else if (popQueue == 'D' || popQueue == 'd') {
-                    spin_right(6.5);
+                else if (popQueue == 'B' || popQueue == 'b') {
+                    spin_right(6);
                 }
             }
             isFork = 0;
