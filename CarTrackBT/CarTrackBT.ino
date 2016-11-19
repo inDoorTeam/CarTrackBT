@@ -5,6 +5,10 @@
 char getstr;
 QueueList <char> pathQueue; // 路徑佇列
 
+int Echo = A1;  // Echo回声脚(P2.0)
+int Trig = A0;  //  Trig 触发脚(P2.1)
+
+int distance = 0;
 int Left_motor_go = 8;
 int Left_motor_back = 9;
 int Right_motor_go = 10;
@@ -22,7 +26,7 @@ int SL;
 int SR;
 
 int speed_high = 120;
-int speed_normal = 40;
+int speed_normal = 80;
 int speed_zero = 0;
 int speed_begin = 100;
 
@@ -35,6 +39,8 @@ void setup(){
     pinMode(Right_motor_back, OUTPUT); // PIN 11 (PWM)
     pinMode(key, INPUT);
     pinMode(beep, OUTPUT);
+    pinMode(Echo, INPUT);    // 定义超声波输入脚
+    pinMode(Trig, OUTPUT);   // 定义超声波输出脚
     pinMode(SensorRight, INPUT);
     pinMode(SensorLeft, INPUT);
     Serial.begin(9600);
@@ -160,6 +166,21 @@ void keyscan(){
     }
 }
 
+bool isStop()   // 量出前方距离 
+{
+  digitalWrite(Trig, LOW);   // 给触发脚低电平2μs
+  delayMicroseconds(2);
+  digitalWrite(Trig, HIGH);  // 给触发脚高电平10μs，这里至少是10μs
+  delayMicroseconds(10);
+  digitalWrite(Trig, LOW);    // 持续给触发脚低电
+  distance = pulseIn(Echo, HIGH);  // 读取高电平时间(单位：微秒)
+  distance = distance/58;       //为什么除以58等于厘米，  Y米=（X秒*344）/2
+  if(distance <= 10){
+    stop();
+    return 1;
+  }
+  return 0;
+}
 
 void choice() {
     getstr = Serial.read();
@@ -169,7 +190,7 @@ void choice() {
         getstr == 'B' || getstr == 'b') {
         pathQueue.push(getstr);
   
-        Serial.println(pathQueue.peek());
+        //Serial.println(pathQueue.peek());
     }
     delay(300);
 }
@@ -179,22 +200,26 @@ void loop() {
   
     while (1) {
         if (!isFork){
-            SR = digitalRead(SensorRight);
-            SL = digitalRead(SensorLeft);
-            if (SL == LOW && SR == LOW) {
-                run();
-            }
-            else if (SL == HIGH & SR == LOW) {
-                left();
-            }
-            else if (SR == HIGH & SL == LOW) {
-                right();
-            }
-            else {
-                stop();
-                choice();
-                isFork = 1;
-            }
+           
+              SR = digitalRead(SensorRight);
+              SL = digitalRead(SensorLeft);
+              if (SL == LOW && SR == LOW) {
+                  if(!isStop()){
+                    run();
+                  }
+              }
+              else if (SL == HIGH & SR == LOW) {
+                  left();
+              }
+              else if (SR == HIGH & SL == LOW) {
+                  right();
+              }
+              else {
+                  stop();
+                  choice();
+                  isFork = 1;
+              }
+              
         }
         else if (isFork) { // 如果遇到叉路
             //bool isFirst = 1;
@@ -219,7 +244,7 @@ void loop() {
                     delay(200);
                 }
                 else if (popQueue == 'B' || popQueue == 'b') {
-                    spin_right(6);
+                    spin_right(5.5);
                 }
             }
             isFork = 0;
